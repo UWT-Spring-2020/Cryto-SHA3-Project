@@ -12,6 +12,7 @@ public class SHA3 {
     static final int RATE_KECCA512 = 136; // according to NIST SP 800-185 specifications
     static final String LINE_DIVIDER = "*******************************************************************************";
     static final String PAGE_DIVIDER = "**************************************************************************************************************************************************************";
+    static final String PASSWORD = "Hello World!";
 
 
     public static void main(String[] args) throws IOException {
@@ -72,25 +73,33 @@ public class SHA3 {
         // // KMACXOF256(FILE, PW)
         
 
-        System.out.println("File Bytes from " + file2.toPath() + ":\n" + Arrays.toString(fileBytes2) + "\n");
+        System.out.println("Encrypting " + file2.getName() + " with passphrase " + PASSWORD + "\n");
 
         System.out.println("Running cSHAKE256 algorithm ...\n");
-        hash_cSHAKE256 = cSHAKE256(Arrays.toString(fileBytes2), 256, "", "PASSWORD");
+        hash_cSHAKE256 = cSHAKE256(Arrays.toString(fileBytes2), 256, "", PASSWORD);
         System.out.println("cSHAKE256 Hash:\n " + Arrays.toString(hash_cSHAKE256));
         
         System.out.println("\n" + LINE_DIVIDER + "\n");
         
         System.out.println("Running KMACXOF256 algorithm ...\n");
-        hash_KMACXOF256 = KMACXOF256("",Arrays.toString(fileBytes2), 256, "PASSWORD");
+        hash_KMACXOF256 = KMACXOF256("",Arrays.toString(fileBytes2), 256, PASSWORD);
         System.out.println("KMACXOF256 Hash:\n" + Arrays.toString(hash_KMACXOF256));
         
+        System.out.println("\n" + LINE_DIVIDER + "\n");
 
         // decryppt here
+        System.out.println("Decrypting " + file2.getName() + " cryptogram with passphrase " + PASSWORD);
+        
+        System.out.println("\n Implementation coming soon");
 
-
-
+        System.out.println("\n\n" + PAGE_DIVIDER + "\n" + PAGE_DIVIDER + "\n\n");
 
         // MAC(FILE, PW)
+        System.out.println("Computing Message Authentication Code (MAC) for " + file2.getName() + "\n");
+        hash_KMACXOF256 = KMACXOF256("",Arrays.toString(fileBytes2), 256, "PASSWORD");
+        System.out.println("KMACXOF256 Hash:\n" + Arrays.toString(hash_KMACXOF256));
+
+        System.out.println("\n\n" + PAGE_DIVIDER + "\n" + PAGE_DIVIDER + "\n\n");
 
         // PART 2
         // GENERATE ELLIPTIC KEY PAIR GIVEN PASSPHRASE, WRITE PUBLIC_KEY TO FILE
