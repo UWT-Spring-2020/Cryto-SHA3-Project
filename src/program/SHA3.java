@@ -1,37 +1,89 @@
-package source;
+package src;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.lang.Cloneable;
+import java.nio.file.*;
+import java.io.*;
+import java.math.*;
+import java.security.*;
+import java.lang.*;
+import java.util.*;
 
 public class SHA3 {
 
-    public SHA3() {
+    static final int RATE_KECCA512 = 136; // according to NIST SP 800-185 specifications
+    static final String LINE_DIVIDER = "*******************************************************************************";
+    static final String PAGE_DIVIDER = "**************************************************************************************************************************************************************";
 
-    }
 
-    public static void main(String[] args) {
-        System.out.println("Hello World! from Crypto Project");
+    public static void main(String[] args) throws IOException {
+        byte[] hash_cSHAKE256;;
+        byte[] hash_KMACXOF256;
+        
+        System.out.println("Hello World! from Crypto Project\n");
+
 
         // PART 1
         // cSHAKE256(FILE) -> HASH 
         // KMACXOF256(FILE) -> HASH
-        // SHA3_CSHAKE("", FILE, 256, "");
-        // SHA3_KMACXOF("", FILE, 256, "");
+        File file1 = new File("/home/kali/Programming/Crypto/SHA3/Crypto-SHA3-Project/resources/dummy.pdf");
+        File file2 = new File("/home/kali/Programming/Crypto/SHA3/Crypto-SHA3-Project/resources/sampleText.txt");
+        
+        // InputStream fileStream = new FileInputStream(file);
+        byte[] fileBytes1 = Files.readAllBytes(file1.toPath());
+        byte[] fileBytes2 = Files.readAllBytes(file2.toPath());
+
+        System.out.println("File Bytes from " + file1.toPath() + ":\n" + Arrays.toString(fileBytes1) + "\n");
+
+        System.out.println("Running cSHAKE256 algorithm ...\n");
+        hash_cSHAKE256= cSHAKE256(Arrays.toString(fileBytes1), 256, "", "");
+        System.out.println("cSHAKE256 Hash:\n" + Arrays.toString(hash_cSHAKE256));
+
+        System.out.println("\n" + LINE_DIVIDER + "\n");
+
+        System.out.println("Running KMACXOF256 algorithm ...\n");
+        hash_KMACXOF256 = KMACXOF256("",Arrays.toString(fileBytes1), 256, "");
+        System.out.println("KMACXOF256 Hash:\n" + Arrays.toString(hash_KMACXOF256) + "\n\n");
+
+        System.out.println("\n\n" + PAGE_DIVIDER + "\n" + PAGE_DIVIDER + "\n\n");
+        
 
         // // cSHAKE256(TEXT_INPUT) -> HASH
         // // KMACXOF256(TEXT_INPUT) -> HASH
-        // SHA3_CSHAKE("", TEXT_INPUT, 256, "");
-        // SHA3_KMACXOF("", TEXT_INPUT, 256, "");
+        Scanner myScan = new Scanner(System.in);
+        
+        System.out.print("Enter a text input: ");
+        String userInput = myScan.nextLine();
+        System.out.println();
+
+        System.out.println("Running cSHAKE256 algorithm ...\n");
+        hash_cSHAKE256 = cSHAKE256(userInput, 256, "", "");
+        System.out.println("cSHAKE256 Hash:\n" + Arrays.toString(hash_cSHAKE256));
+
+        System.out.println("\n" + LINE_DIVIDER + "\n");
+        
+        System.out.println("Running KMACXOF256 algorithm ...\n");
+        hash_KMACXOF256 = KMACXOF256("", userInput, 256, "");
+        System.out.println("KMACXOF256 Hash:\n" + Arrays.toString(hash_KMACXOF256) + "\n\n");
+
+        System.out.println("\n\n" + PAGE_DIVIDER + "\n" + PAGE_DIVIDER + "\n\n");
+
 
         // // ENCRYPT AND DECRYPT:
         // // cSHAKE256(FILE, PW)
         // // KMACXOF256(FILE, PW)
-        // SHA3_CSHAKE("", FILE, 256, PW);
-        // SHA3_KMACXOF("", FILE, 256, PW);
+        
+
+        System.out.println("File Bytes from " + file2.toPath() + ":\n" + Arrays.toString(fileBytes2) + "\n");
+
+        System.out.println("Running cSHAKE256 algorithm ...\n");
+        hash_cSHAKE256 = cSHAKE256(Arrays.toString(fileBytes2), 256, "", "PASSWORD");
+        System.out.println("cSHAKE256 Hash:\n " + Arrays.toString(hash_cSHAKE256));
+        
+        System.out.println("\n" + LINE_DIVIDER + "\n");
+        
+        System.out.println("Running KMACXOF256 algorithm ...\n");
+        hash_KMACXOF256 = KMACXOF256("",Arrays.toString(fileBytes2), 256, "PASSWORD");
+        System.out.println("KMACXOF256 Hash:\n" + Arrays.toString(hash_KMACXOF256));
+        
 
         // decryppt here
 
@@ -55,29 +107,8 @@ public class SHA3 {
         // ENCRYPT(FILE, RECIPIENT_PUBLIC_KEY) && SIGN(FILE, USER_PRIVATE_KEY)
     }
 
-                                                                                                                          /**
-     * SHA3_KMACXOF(K, X, L, S):
-     * Validity Conditions: len(K) < 2^2040 and 0 <= L  and len(S) < 2^2040
-     *
-     * @param K key bit string.
-     * @param X input bit string.
-     * @param L output length
-     * @param S customization string
-     */
-    public static byte[] KMACXOF(byte[] K, byte[] X, int L, byte[] S) throws IOException {
-        // 1. newX = bytepad(encode_string(K), 136) || X || right_encode(0).
-        // 2. T = bytepad(encode_string(“KMAC”) || encode_string(S), 136).
-        // 3. return KECCAK[512](T || newX || 00, L).
-
-        byte[] newX = bytesConcat(bytepad(encode_string(K), 136), X, right_encode(0));
-        byte[] T = bytepad(bytesConcat(encode_string("KMAC".getBytes()) , encode_string(S)), 136);
-
-        return KECCAK(bytesConcat(T, newX, "00".getBytes()), L);
-    }
-
-
     /**
-     * SHA3_CSHAKE256(K, X, L, S):
+     * KMACXOF256(K, X, L, S):
      * Validity Conditions: len(K) < 2^2040 and 0 <= L  and len(S) < 2^2040
      *
      * @param K key bit string.
@@ -85,37 +116,39 @@ public class SHA3 {
      * @param L output length
      * @param S customization string
      */
-    public static byte[] cSHAKE(byte[] K, byte[] X, int L, byte[] S) throws IOException {
-        // 1. newX = bytepad(encode_string(K), 136) || X || right_encode(0).
+    public static byte[] KMACXOF256(String K, String X, int L, String S) throws IOException {
+        // 1. newX = bytepad(encode_string(K), 136) || X || right_encode(L).
         // 2. return cSHAKE256(newX, L, “KMAC”, S).
 
-        byte[] newX = bytesConcat(bytepad(encode_string(K), 136), X, right_encode(0));
-        return cSHAKE256(newX, L, "KMAC".getBytes(), S);
-
+        byte[] bytePad = bytepad(new String(encode_string(K)), RATE_KECCA512);
+        byte[] paddedInput = bytesConcat(bytePad, X.getBytes(), right_encode(L));
+        return cSHAKE256(new String(paddedInput), L, "KMAC", S);
     }
+
 
     /**
      * cSHAKE256(X, L, N, S):
-     * Validity Conditions: len(N) < 2^2040 and len(S) < 2^2040
+     * Validity Conditions: len(K) < 2^2040 and 0 <= L  and len(S) < 2^2040
      *
-     * @param X input bit string
+     * @param X main input bit string
      * @param L output length
      * @param N function-name bit string
      * @param S customization bit string
      */
-    public static byte[] cSHAKE256(byte[] X, int L, byte[] N, byte[] S) throws IOException {
+    public static byte[] cSHAKE256(String X, int L, String N, String S) throws IOException {
         // 1. If N = "" and S = "":
-        //      return SHAKE256(X, L);
+        // return SHAKE256(X, L);
         // 2. Else:
-        //      return KECCAK[512](bytepad(encode_string(N) || encode_string(S), 136) || X || 00, L)
+        // return KECCAK[512](bytepad(encode_string(N) || encode_string(S), 136) || X || 00, L).
 
-        
-        byte[] pad = bytepad(bytesConcat(encode_string(N), encode_string(S)), 136);
-        byte[] arg = bytesConcat(pad, X , "00".getBytes());
-        return KECCAK(arg, L);
-    
+        if (N.equals("") && S.equals("")){
+            return SHAKE256(X, L);
+        } else {
+            byte[] bytePad = bytepad(new String(bytesConcat(encode_string(N), encode_string(S))), RATE_KECCA512);
+            byte[] paddedInput = bytesConcat(bytePad, X.getBytes(), "00".getBytes());
+            return KECCAK512(new String(paddedInput), L);
+        }
     }
-
 
     /**
      * bytepad(X, w):
@@ -124,9 +157,9 @@ public class SHA3 {
      * @param X input string
      * @param w padding
      */
-    public static byte[] bytepad(byte[] X, int w) throws IOException {
+    public static byte[] bytepad(String X, int w) throws IOException {
 
-        byte[] z = bytesConcat(left_encode(w), X);
+        byte[] z = bytesConcat(left_encode(w), X.getBytes());
         while (z.length % 8 != 0)
             z = bytesConcat(z, "00".getBytes());
         while ((z.length/8) % w != 0)
@@ -137,11 +170,11 @@ public class SHA3 {
      *    encode_string(S):
      *    Validity Conditions: 0 <= len(S) < 2^2040
      *
-     *    @param S    
+     *    @param S input bit string
     */
-    public static byte[] encode_string(byte[] S) throws IOException {
+    public static byte[] encode_string(String S) throws IOException {
 
-        return bytesConcat(left_encode(S.length), S);
+        return bytesConcat(left_encode(S.length()), S.getBytes());
 
     }
 
@@ -150,7 +183,6 @@ public class SHA3 {
      *   Validity Conditions: 0 <= x < 2^2040
      *
      *   @param X string length
-     *
      */
     public static byte[] left_encode(int X) {
         
@@ -181,8 +213,7 @@ public class SHA3 {
     *   right_encode(x):
     *   Validity Conditions: 0 <= x < 2^2040
     *
-    *  @param X string length
-    *
+    *   @param X string length
     */
     public static byte[] right_encode(int X) {
         
@@ -210,46 +241,85 @@ public class SHA3 {
     }
 
 //        # KECCAK ?? Import from java.lang.Cloneable
-    public static byte[] KECCAK(byte[] input, int length) {
-        if (length == 512){
-            try {
-                // getInstance() method is called with algorithm SHA-512
-                MessageDigest md = MessageDigest.getInstance("SHA-512");
-      
-                // digest() method is called
-                // to calculate message digest of the input string
-                // returned as array of byte
-                byte[] messageDigest = md.digest(input);
+    public static byte[] KECCAK512(String input, int length) {
+        
+        try {
+            // getInstance() method is called with algorithm SHA-512
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
     
-                System.out.println("Message Digest:\n" + messageDigest + "\n");
-      
-                // Convert byte array into signum representation
-                BigInteger no = new BigInteger(1, messageDigest);
+            // digest() method is called
+            // to calculate message digest of the input string
+            // returned as array of byte
+            byte[] messageDigest = md.digest(input.getBytes());
+
+            System.out.println("Message Digest:\n" + messageDigest + "\n");
     
-                System.out.println("Big Integer:\n" + no + "\n");
-      
-                // Convert message digest into hex value
-                String hashtext = no.toString(16);
+            // Convert byte array into signum representation
+            BigInteger no = new BigInteger(1, messageDigest);
+
+            System.out.println("Big Integer:\n" + no + "\n");
     
-                System.out.println("Hash Text:\n" + hashtext + "\n");
-      
-                // Add preceding 0s to make it 32 bit
-                while (hashtext.length() < 32) {
-                    hashtext = "0" + hashtext;
-                }
+            // Convert message digest into hex value
+            String hashtext = no.toString(16);
+
+            System.out.println("Hash Text:\n" + hashtext + "\n");
     
-                System.out.println("Outval:\n" + hashtext + "\n");
-      
-                // return the HashText
-                return hashtext.getBytes();
+            // Add preceding 0s to make it 32 bit
+            while (hashtext.length() < 32) {
+                hashtext = "0" + hashtext;
             }
-      
-            // For specifying wrong message digest algorithms
-            catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e);
-            }       
+
+            System.out.println("Outval:\n" + hashtext + "\n");
+    
+            // return the HashText
+            return hashtext.getBytes();
+        }
+    
+        // For specifying wrong message digest algorithms
+        catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }       
     }
-        return null;
+
+    public static byte[] SHAKE256(String input, int length) {
+        
+        try {
+            // getInstance() method is called with algorithm SHA-512
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
+    
+            // digest() method is called
+            // to calculate message digest of the input string
+            // returned as array of byte
+            byte[] messageDigest = md.digest(input.getBytes());
+
+            System.out.println("Message Digest:\n" + messageDigest + "\n");
+    
+            // Convert byte array into signum representation
+            BigInteger no = new BigInteger(1, messageDigest);
+
+            System.out.println("Big Integer:\n" + no + "\n");
+    
+            // Convert message digest into hex value
+            String hashtext = no.toString(16);
+
+            System.out.println("Hash Text:\n" + hashtext + "\n");
+    
+            // Add preceding 0s to make it 32 bit
+            while (hashtext.length() < 32) {
+                hashtext = "0" + hashtext;
+            }
+
+            System.out.println("Outval:\n" + hashtext + "\n");
+    
+            // return the HashText
+            return hashtext.getBytes();
+        }
+    
+        // For specifying wrong message digest algorithms
+        catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }       
+
     }
 
     private static byte[] bytesConcat(byte[] ... arrays) throws IOException {
