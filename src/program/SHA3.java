@@ -1,4 +1,4 @@
-package src;
+package program;
 
 import java.nio.file.*;
 import java.io.*;
@@ -6,18 +6,23 @@ import java.math.*;
 import java.security.*;
 import java.lang.*;
 import java.util.*;
+import javax.security.cert.X509Certificate;
+import java.security.spec.*;
 
 public class SHA3 {
 
     static final int RATE_KECCA512 = 136; // according to NIST SP 800-185 specifications
+    static final int SECURITY_BIT_LEVEL = 256;
     static final String LINE_DIVIDER = "*******************************************************************************";
     static final String PAGE_DIVIDER = "**************************************************************************************************************************************************************";
     static final String PASSWORD = "Hello World!";
+    static final X509Certificate SERVER_CERTIFICATE = null;
 
 
-    public static void main(String[] args) throws IOException {
-        byte[] hash_cSHAKE256;;
-        byte[] hash_KMACXOF256;
+    public static void main(String[] args) 
+            throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, NoSuchProviderException, InvalidAlgorithmParameterException {
+        String hash_cSHAKE256;;
+        String hash_KMACXOF256;
         
         System.out.println("Hello World! from Crypto Project\n");
 
@@ -25,24 +30,23 @@ public class SHA3 {
         // PART 1
         // cSHAKE256(FILE) -> HASH 
         // KMACXOF256(FILE) -> HASH
-        File file1 = new File("/home/kali/Programming/Crypto/SHA3/Crypto-SHA3-Project/resources/dummy.pdf");
-        File file2 = new File("/home/kali/Programming/Crypto/SHA3/Crypto-SHA3-Project/resources/sampleText.txt");
+        File file1 = new File("./../../resources/dummy.pdf");
+        File file2 = new File("./../../resources/sampleText.txt");
         
-        // InputStream fileStream = new FileInputStream(file);
         byte[] fileBytes1 = Files.readAllBytes(file1.toPath());
         byte[] fileBytes2 = Files.readAllBytes(file2.toPath());
 
         System.out.println("File Bytes from " + file1.toPath() + ":\n" + Arrays.toString(fileBytes1) + "\n");
 
         System.out.println("Running cSHAKE256 algorithm ...\n");
-        hash_cSHAKE256= cSHAKE256(Arrays.toString(fileBytes1), 256, "", "");
-        System.out.println("cSHAKE256 Hash:\n" + Arrays.toString(hash_cSHAKE256));
+        hash_cSHAKE256= cSHAKE256(Arrays.toString(fileBytes1), SECURITY_BIT_LEVEL, "", "");
+        
 
         System.out.println("\n" + LINE_DIVIDER + "\n");
 
         System.out.println("Running KMACXOF256 algorithm ...\n");
-        hash_KMACXOF256 = KMACXOF256("",Arrays.toString(fileBytes1), 256, "");
-        System.out.println("KMACXOF256 Hash:\n" + Arrays.toString(hash_KMACXOF256) + "\n\n");
+        hash_KMACXOF256 = KMACXOF256("",Arrays.toString(fileBytes1), SECURITY_BIT_LEVEL, "");
+        
 
         System.out.println("\n\n" + PAGE_DIVIDER + "\n" + PAGE_DIVIDER + "\n\n");
         
@@ -56,14 +60,14 @@ public class SHA3 {
         System.out.println();
 
         System.out.println("Running cSHAKE256 algorithm ...\n");
-        hash_cSHAKE256 = cSHAKE256(userInput, 256, "", "");
-        System.out.println("cSHAKE256 Hash:\n" + Arrays.toString(hash_cSHAKE256));
+        hash_cSHAKE256 = cSHAKE256(userInput, SECURITY_BIT_LEVEL, "", "");
+        
 
         System.out.println("\n" + LINE_DIVIDER + "\n");
         
         System.out.println("Running KMACXOF256 algorithm ...\n");
-        hash_KMACXOF256 = KMACXOF256("", userInput, 256, "");
-        System.out.println("KMACXOF256 Hash:\n" + Arrays.toString(hash_KMACXOF256) + "\n\n");
+        hash_KMACXOF256 = KMACXOF256("", userInput, SECURITY_BIT_LEVEL, "");
+        
 
         System.out.println("\n\n" + PAGE_DIVIDER + "\n" + PAGE_DIVIDER + "\n\n");
 
@@ -71,19 +75,16 @@ public class SHA3 {
         // // ENCRYPT AND DECRYPT:
         // // cSHAKE256(FILE, PW)
         // // KMACXOF256(FILE, PW)
-        
-
         System.out.println("Encrypting " + file2.getName() + " with passphrase " + PASSWORD + "\n");
 
         System.out.println("Running cSHAKE256 algorithm ...\n");
-        hash_cSHAKE256 = cSHAKE256(Arrays.toString(fileBytes2), 256, "", PASSWORD);
-        System.out.println("cSHAKE256 Hash:\n " + Arrays.toString(hash_cSHAKE256));
+        hash_cSHAKE256 = cSHAKE256(Arrays.toString(fileBytes2), SECURITY_BIT_LEVEL, "", PASSWORD);
         
         System.out.println("\n" + LINE_DIVIDER + "\n");
         
         System.out.println("Running KMACXOF256 algorithm ...\n");
-        hash_KMACXOF256 = KMACXOF256("",Arrays.toString(fileBytes2), 256, PASSWORD);
-        System.out.println("KMACXOF256 Hash:\n" + Arrays.toString(hash_KMACXOF256));
+        hash_KMACXOF256 = KMACXOF256("", Arrays.toString(fileBytes2), SECURITY_BIT_LEVEL, PASSWORD);
+
         
         System.out.println("\n" + LINE_DIVIDER + "\n");
 
@@ -96,8 +97,7 @@ public class SHA3 {
 
         // MAC(FILE, PW)
         System.out.println("Computing Message Authentication Code (MAC) for " + file2.getName() + "\n");
-        hash_KMACXOF256 = KMACXOF256("",Arrays.toString(fileBytes2), 256, "PASSWORD");
-        System.out.println("KMACXOF256 Hash:\n" + Arrays.toString(hash_KMACXOF256));
+        hash_KMACXOF256 = KMACXOF256("",Arrays.toString(fileBytes2), SECURITY_BIT_LEVEL, PASSWORD);
 
         System.out.println("\n\n" + PAGE_DIVIDER + "\n" + PAGE_DIVIDER + "\n\n");
 
@@ -105,15 +105,142 @@ public class SHA3 {
         // GENERATE ELLIPTIC KEY PAIR GIVEN PASSPHRASE, WRITE PUBLIC_KEY TO FILE
         // WRITE ENCRYPT(PRIVATE_KEY, PW) TO FILE
 
+        // Setting up profiles and data-management system for the users
+        File aliceProfile = new File("./../../resources/profiles/Alice_Context.txt");
+        File bobProfile = new File("./../../resources/profiles/Bob_Context.txt");
+        
+        FileOutputStream outputStreamA = new FileOutputStream(aliceProfile);
+        FileOutputStream outputStreamB = new FileOutputStream(bobProfile);
+
+        final String ALICE_MESSAGE = "You meant the world to me. Would love to hear back from you soon! XOXO";        
+        final String BOB_MESSAGE = "Who is this?";
+
+        KeyPairGenerator aliceKeyGen = KeyPairGenerator.getInstance("EC","SunEC");
+        KeyPairGenerator bobKeyGen = KeyPairGenerator.getInstance("EC","SunEC");
+        
+        ECGenParameterSpec ecsp = new ECGenParameterSpec("secp224r1");
+        ECGenParameterSpec ecspz = new ECGenParameterSpec("secp224r1");
+
+        aliceKeyGen.initialize(ecsp);
+        bobKeyGen.initialize(ecspz);
+
+        KeyPair aliceKP = aliceKeyGen.genKeyPair();
+        KeyPair bobKP = bobKeyGen.genKeyPair();
+
+        final String ALICE_PRIVATE_KEY = String.valueOf(aliceKP.getPrivate());
+        final String ALICE_PUBLIC_KEY = String.valueOf(aliceKP.getPublic());
+
+        final String BOB_PRIVATE_KEY = String.valueOf(bobKP.getPrivate());
+        final String BOB_PUBLIC_KEY = String.valueOf(bobKP.getPublic());
+
+        // Write both parties public key to their designated file
+        System.out.println("Writing Alice and Bob's public keys to file");
+
+        outputStreamA.write(ALICE_PUBLIC_KEY.getBytes());
+        outputStreamB.write(BOB_PUBLIC_KEY.getBytes());
+
+        
+
+        // Write both parties encrypted private key to their designated file
+        System.out.println("Writing Alice and Bob's encrypted private keys to file");
+        
+        String encryptedAlicePrivate = KMACXOF256(ALICE_PRIVATE_KEY, ALICE_MESSAGE, SECURITY_BIT_LEVEL, PASSWORD);
+        String encryptedBobPrivate = KMACXOF256(BOB_PRIVATE_KEY, BOB_MESSAGE, SECURITY_BIT_LEVEL, PASSWORD);
+
+        KMACXOF256("", userInput, SECURITY_BIT_LEVEL, "");
+
+        // System.out.println("\n" + encryptedAlicePrivate);
+        // System.out.println("\n" + encryptedBobPrivate);
+
+        // outputStreamA.write(encryptedAlicePrivate);
+        // outputStreamB.write(encryptedBobPrivate);
+
         // ENCRYPT(FILE, PUBLIC_KEY)
         // DECRYPT(ENCRYPTED_FILE, PW)
+        System.out.println("Encrypting both parties' profile under their respective public key ...\n\n");
+        String alice_jointProfile_hash = KMACXOF256(ALICE_PUBLIC_KEY, String.valueOf(aliceProfile), SECURITY_BIT_LEVEL, PASSWORD);
+        System.out.println("Alice's Trusted Joint-Profile Hash: " + alice_jointProfile_hash + "\n");
+        
+        String bob_jointProfile_hash = KMACXOF256(BOB_PUBLIC_KEY, String.valueOf(bobProfile), SECURITY_BIT_LEVEL, PASSWORD);
+        System.out.println("Bob's Trusted Joint-Profile Hash: " + bob_jointProfile_hash + "\n");
+        
+        System.out.println("Decrypting both parties' cryptograms given their password " + PASSWORD);
+        
+        // decryppt code goes here
+
+
+        System.out.println("\n\n" + PAGE_DIVIDER + "\n" + PAGE_DIVIDER + "\n\n");
 
         // ENCRYPT/DECRYPT(TEXT_INPUT, ?)
+        System.out.print("Now that we have exchanged our ECDHIES / Schnorr key-pair agreement, we're going to move forward to storing your information to our safe vault. \n" 
+                        + "\n Provided with the 256-bit security strength from the latest NIST favorite encryption algorithm, Secured Hashed Algorithm 3 (SHA3), \n "
+                        + "\n better now with the integrated elliptic public/private key-pair system, on top of giving users the choice for encrypting their data\n"
+                        + "\n with the password of their choice. That's a triple-whammy in terms of Cryptographic Security, a bit of an overkill for an undergraduate level"
+                        + "elective course on Intro to Cryptography taught by Professor Barreto himself. Enough said, let's proceed.\n\n");
+
+        System.out.println("Please input the information you want to store in our system:");
+        userInput = myScan.nextLine();
+        System.out.println();
+
+        System.out.print("Password-protected? [Y/n] ");
+        Boolean passProtected = myScan.nextBoolean();
+
+        System.out.println("Encrypting text input using cSHAKE256 algorithm under an elliptic key-pair\n");
+        if (!passProtected)
+            hash_cSHAKE256 = cSHAKE256(userInput, SECURITY_BIT_LEVEL, "", "");
+        else
+            hash_cSHAKE256 = cSHAKE256(userInput, SECURITY_BIT_LEVEL, "", PASSWORD);
+
+        System.out.println("cSHAKE256 Hash: " + hash_cSHAKE256);
+        
+
+        System.out.println("\n" + LINE_DIVIDER + "\n");
+        
+        System.out.println("Decrypting cryptogram using reverse-cSHAKE256 mechanism\n");
+        
+        // decryppt code goes here
+        
+
+        System.out.println("\n\n" + PAGE_DIVIDER + "\n" + PAGE_DIVIDER + "\n\n");
 
         // SIGN(FILE, PW) && WRITE SIGNATURE TO FILE
         // VERIFY(FILE, SIGNATURE, PUBLIC_KEY) 
-
         // ENCRYPT(FILE, RECIPIENT_PUBLIC_KEY) && SIGN(FILE, USER_PRIVATE_KEY)
+
+        Signature aliceSig = Signature.getInstance("SHA256withECDSA","SunEC");
+        Signature bobSig = Signature.getInstance("SHA256withECDSA","SunEC");
+
+        aliceSig.initSign(aliceKP.getPrivate());
+        bobSig.initSign(bobKP.getPrivate());
+
+        byte[] Alice2BobMsg = ALICE_MESSAGE.getBytes("UTF-8");
+        byte[] Bob2AliceMsg = BOB_MESSAGE.getBytes("UTF-8");
+        byte[] a_sig; byte[] b_sig;
+        
+        aliceSig.update(Alice2BobMsg);
+        bobSig.update(Bob2AliceMsg);
+        
+        a_sig = aliceSig.sign();
+        b_sig = bobSig.sign();
+
+        Signature aliceSigVerify = Signature.getInstance("SHA256withECDSA", "SunEC");
+        Signature bobSigVerify = Signature.getInstance("SHA256withECDSA", "SunEC");
+
+        aliceSigVerify.initVerify(aliceKP.getPublic());
+        bobSigVerify.initVerify(bobKP.getPublic());
+        
+        aliceSigVerify.update(Alice2BobMsg);
+        bobSigVerify.update(Bob2AliceMsg);
+
+        boolean validSignature_Alice = aliceSigVerify.verify(aliceSig.sign());
+        boolean validSignature_Bob = bobSigVerify.verify(bobSig.sign());
+
+        System.out.println("Alice Signature: " + validSignature_Alice);
+        System.out.println("Bob Signature: " + validSignature_Bob);
+
+        System.out.println("\n\n" + PAGE_DIVIDER + "\n" + PAGE_DIVIDER + "\n\n");
+
+
     }
 
     /**
@@ -125,7 +252,7 @@ public class SHA3 {
      * @param L output length
      * @param S customization string
      */
-    public static byte[] KMACXOF256(String K, String X, int L, String S) throws IOException {
+    public static String KMACXOF256(String K, String X, int L, String S) throws IOException {
         // 1. newX = bytepad(encode_string(K), 136) || X || right_encode(L).
         // 2. return cSHAKE256(newX, L, “KMAC”, S).
 
@@ -144,7 +271,7 @@ public class SHA3 {
      * @param N function-name bit string
      * @param S customization bit string
      */
-    public static byte[] cSHAKE256(String X, int L, String N, String S) throws IOException {
+    public static String cSHAKE256(String X, int L, String N, String S) throws IOException {
         // 1. If N = "" and S = "":
         // return SHAKE256(X, L);
         // 2. Else:
@@ -250,7 +377,7 @@ public class SHA3 {
     }
 
 //        # KECCAK ?? Import from java.lang.Cloneable
-    public static byte[] KECCAK512(String input, int length) {
+    public static String KECCAK512(String input, int length) {
         
         try {
             // getInstance() method is called with algorithm SHA-512
@@ -281,7 +408,7 @@ public class SHA3 {
             System.out.println("Outval:\n" + hashtext + "\n");
     
             // return the HashText
-            return hashtext.getBytes();
+            return hashtext;
         }
     
         // For specifying wrong message digest algorithms
@@ -290,7 +417,7 @@ public class SHA3 {
         }       
     }
 
-    public static byte[] SHAKE256(String input, int length) {
+    public static String SHAKE256(String input, int length) {
         
         try {
             // getInstance() method is called with algorithm SHA-512
@@ -321,7 +448,7 @@ public class SHA3 {
             System.out.println("Outval:\n" + hashtext + "\n");
     
             // return the HashText
-            return hashtext.getBytes();
+            return hashtext;
         }
     
         // For specifying wrong message digest algorithms
